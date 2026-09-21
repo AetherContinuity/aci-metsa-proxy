@@ -10,7 +10,8 @@
 //
 //  ?caps&src=            GetCapabilities
 //  ?describe&src=[&typeName=]
-//  ?typeName=X&src=[&bbox=x1,y1,x2,y2][&cql=][&count=][&start=][&sortBy=][&hits][&fmt=gml]
+//  ?typeName=X&src=[&bbox=x1,y1,x2,y2][&cql=][&count=][&start=][&sortBy=][&hits][&fmt=gml][&props=A,B,C]
+//      props = GeoServer propertyName: vain luetellut kentat, ei geometriaa -> pienempi vastaus (2.2)
 //      bbox EPSG:3067; cql vain GeoServer-lähteille (mki, ruoka)
 //  ?s2search&bbox=lon,lat,lon,lat[&datetime=2023-06-01/2023-08-31][&cloud=30][&limit=50]
 //  ?cog=sentinel-s2-l2a-cogs/…/B04.tif   (Range välitetään, HEAD tuettu)
@@ -18,7 +19,7 @@
 // Tuntemattomat polut → 404. Välimuisti: wrangler.toml [cache] + Cache-Control
 // (caches.default ei toimi workers.dev-osoitteissa).
 
-const VERSION = 'metsa-v2.1-2026-09-21';
+const VERSION = 'metsa-v2.2-2026-09-21';
 
 const WFS = {
   mki:   { url: 'https://avoin.metsakeskus.fi/rajapinnat/v1/forestusedeclaration/ows', geoserver: true },
@@ -139,6 +140,10 @@ async function wfs(p) {
     if (p.get('bbox')) q.set('bbox', `${p.get('bbox')},EPSG:3067`);
     if (p.get('cql')) q.set('cql_filter', p.get('cql'));
     if (p.get('sortBy')) q.set('sortBy', p.get('sortBy'));
+    if (p.get('props')) {
+      if (!/^[A-Za-z0-9_,:]+$/.test(p.get('props'))) return json({ error: 'props: vain kenttanimet pilkulla erotettuina' }, 400, 0);
+      q.set('propertyName', p.get('props'));
+    }
     if (p.has('hits')) {
       q.set('resultType', 'hits');
     } else {
