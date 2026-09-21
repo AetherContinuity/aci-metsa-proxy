@@ -2,7 +2,10 @@
 //  WFS (kiinteät upstreamit, src=):
 //    mki   Metsäkeskus, metsänkäyttöilmoitukset (GeoServer)
 //    ruoka Ruokavirasto INSPIRE (GeoServer): perus- ja kasvulohkot, CC BY 4.0
-//    mmlbu MML INSPIRE rakennukset (maastotietokanta), bu_mtk
+//    ryhti SYKE Ryhti rakennukset (valmiit + hankerakennukset), GeoServer, CC BY 4.0
+//          valmistumisvuosi, kayttotarkoitus, rakentamisluvan paatospaiva
+//    (mmlbu poistettu 2.1: MML:n INSPIRE-WFS bu_mtk palautti HTTP 520;
+//     rakennustiedot siirtyivat Ryhtiin, MML:n maastotiedot OGC API vaatii API-avaimen)
 //  Sentinel-2 L2A (Earth Search / AWS Open Data): STAC-haku + COG-range-välitys
 //
 //  ?caps&src=            GetCapabilities
@@ -15,12 +18,13 @@
 // Tuntemattomat polut → 404. Välimuisti: wrangler.toml [cache] + Cache-Control
 // (caches.default ei toimi workers.dev-osoitteissa).
 
-const VERSION = 'metsa-v2-2026-09-17';
+const VERSION = 'metsa-v2.1-2026-09-21';
 
 const WFS = {
   mki:   { url: 'https://avoin.metsakeskus.fi/rajapinnat/v1/forestusedeclaration/ows', geoserver: true },
   ruoka: { url: 'https://inspire.ruokavirasto-awsa.com/geoserver/wfs', geoserver: true },
-  mmlbu: { url: 'https://inspire-wfs.maanmittauslaitos.fi/inspire-wfs/bu_mtk', geoserver: false },
+  ryhti: { url: 'https://paikkatiedot.ymparisto.fi/geoserver/ryhti_building/wfs', geoserver: true },
+  ryhtilupa: { url: 'https://paikkatiedot.ymparisto.fi/geoserver/ryhti_permit/wfs', geoserver: true },
 };
 const S2_STAC = 'https://earth-search.aws.element84.com/v1/search';
 const S2_COG = 'https://sentinel-cogs.s3.us-west-2.amazonaws.com';
@@ -42,7 +46,7 @@ export default {
       if (p.has('cog')) return await cog(req, p.get('cog'));
       if (p.has('s2search')) return await s2search(p);
       if (p.has('caps') || p.has('describe') || p.get('typeName')) return await wfs(p);
-      return json({ error: 'usage: ?caps|?describe|?typeName=|?s2search|?cog= (src=mki|ruoka|mmlbu)', version: VERSION }, 400, 0);
+      return json({ error: 'usage: ?caps|?describe|?typeName=|?s2search|?cog= (src=mki|ruoka|ryhti|ryhtilupa)', version: VERSION }, 400, 0);
     } catch (e) {
       return json({ error: e.message }, 500, 0);
     }
